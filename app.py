@@ -15,3 +15,9 @@ db.init_app(app)
 # TODO: models
 # TODO: routes
 
+
+#install jwt / import jwt - https://pyjwt.readthedocs.io/en/stable/
+#validation for json - 
+#create a jsonschema.py file
+    #pip install jsonschema
+    #write a schema for each model
