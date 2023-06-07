@@ -39,15 +39,15 @@ class User(db.Model):
         nullable=False,
     )
 
-    isHost = db.Column(
+    is_host = db.Column(
         db.boolean,
         nullable=False,
         default="False",
     )
 
-
     listing = db.relationship('Listing', backref="host")
-
+    
+    booking = db.relationship('Booking', backref="guest")
 
     @classmethod
     def signup(cls, username, first_name, last_name, email, password, isHost):
@@ -188,6 +188,8 @@ class Booking(db.Model):
         nullable=False
     )
 
+    property_id = db.relationship('Listing', backref='bookings')
+
 class Message(db.Model):
 
     __tablename__= 'messages'
@@ -218,6 +220,9 @@ class Message(db.Model):
         db.DateTime,
         nullable=False
     )
+
+    from_username = db.relationship('User', backref="sent_message")
+    listing = db.relationship('Listing', backref="messages")
 
 
 
