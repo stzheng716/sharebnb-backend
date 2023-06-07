@@ -45,7 +45,7 @@ DEFAULT_IMAGE_URL = (
 #     )
 
 #     # listing = db.relationship('Listing', backref="host")
-    
+
 #     # booking = db.relationship('Booking', backref="guest")
 
 #     @classmethod
@@ -96,54 +96,71 @@ class Listing(db.Model):
 
     id = db.Column(
         db.Integer,
-        primary_key=True
+        primary_key=True,
+        autoincrement=True
     )
 
-    # title = db.Column(
-    #     db.String(40),
-    #     nullable=False
-    # )
+    title = db.Column(
+        db.String(40),
+        nullable=False
+    )
 
-    # details = db.Column(
-    #     db.Text,
-    #     nullable=False
-    # )
+    details = db.Column(
+        db.Text,
+        nullable=False
+    )
 
-    # street = db.Column(
-    #     db.String(50),
-    #     nullable=False
-    # )
+    street = db.Column(
+        db.String(50),
+        nullable=False
+    )
 
-    # city = db.Column(
-    #     db.String(30),
-    #     nullable=False
-    # )
+    city = db.Column(
+        db.String(30),
+        nullable=False
+    )
 
-    # state = db.Column(
-    #     db.String(2),
-    #     nullable=False
-    # )
+    state = db.Column(
+        db.String(2),
+        nullable=False
+    )
 
-    # zip = db.Column(
-    #     db.Integer,
-    #     nullable=False
-    # )
+    zip = db.Column(
+        db.Integer,
+        nullable=False
+    )
 
-    # country = db.Column(
-    #     db.String(3),
-    #     nullable=False
-    # )
+    country = db.Column(
+        db.String(3),
+        nullable=False
+    )
 
-    # price_per_night = db.Column(
-    #     db.Integer,
-    #     nullable=False
-    # )
+    price_per_night = db.Column(
+        db.Integer,
+        nullable=False
+    )
 
     image_url = db.Column(
         db.String(255),
         nullable=False,
         default=DEFAULT_IMAGE_URL,
     )
+
+    def serialize(self):
+        """Serialize to dictionary."""
+
+        return {
+            "id": self.id,
+            "title": self.title,
+            "details": self.details,
+            "street": self.street,
+            "city": self.city,
+            "state": self.state,
+            "zip": self.zip,
+            "country": self.country,
+            "price_per_night": self.price_per_night,
+            "image_url": self.image_url
+        }
 
     # username = db.Column(
     #     db.String(30),

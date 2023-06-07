@@ -8,6 +8,8 @@ from awsUpload import uploadFileToS3
 # import jwt
 # from tokens import createToken, authenitcateJWT
 
+AMAZON_BASE_URL = "https://sharebnb-bucket2.s3.us-west-1.amazonaws.com"
+
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql:///sharebnb")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -76,7 +78,7 @@ connect_db(app)
 #     if username == authenitcateJWT(token):
 #         user = User.query.one_or_none(username)
 #         if user:
-#             return jsonify(user=user)   
+#             return jsonify(user=user)
 
 #     return jsonify(error="No user found")
 
@@ -95,11 +97,11 @@ connect_db(app)
 #             user.last_name = data.get('lastName', user.last_name)
 #             user.email = data.get('email', user.email)
 #             user.is_host = data.get('isHost', user.is_host)
-            
+
 #             db.session.add(user)
 #             db.session.commit()
-            
-#             return jsonify(message="update successful")   
+
+#             return jsonify(message="update successful")
 
 #     return jsonify(error="You can only update your own profile information")
 
@@ -113,11 +115,11 @@ connect_db(app)
 #     if username == authenitcateJWT(token):
 #         user = User.query.one_or_none(username)
 #         if user:
-            
+
 #             db.session.delete(username)
 #             db.session.commit()
-           
-#             return jsonify(message="delete successfully")   
+
+#             return jsonify(message="delete successfully")
 
 #     return jsonify(error="You can only delete your own profile information")
 
@@ -133,26 +135,32 @@ connect_db(app)
 #     host = booking.listing.username
 
 #     if authenitcateJWT(token) == guest or host:
-        
-#         return jsonify(booking=booking)   
+
+#         return jsonify(booking=booking)
 
 #     return jsonify(error="You can't look at a booking if your not the host or guest")
-
 @app.post('/listings')
 def make_listing():
+    # breakpoint()
 
-    data = request.json
+    file = request.files['image']
 
-    # title = data.title
-    # details = data.details
-    # street = data.street
-    # state = data.state
-    # zip = data.zip
-    # country = data.country
-    # price_per_night = data.price_per_night
-    image = data.image
+    title = request.form['title']
+    details = request.form['details']
+    street = request.form['street']
+    city = request.form['city']
+    state = request.form['state']
+    zip = request.form['zip']
+    country = request.form['country']
+    price_per_night = request.form['price_per_night']
+
+    image = file
 
     image_url = uploadFileToS3(image)
-    new_listing = Listing(title, details, street, state, zip, country, price_per_night, image_url)
+    full_url = f"{AMAZON_BASE_URL}/{image_url}"
+    new_listing = Listing(title=title, details=details, street=street, state=state, zip=zip, country=country, city=city, price_per_night=price_per_night, image_url=full_url)
+
     db.session.add(new_listing)
     db.session.commit()
+
+    return (jsonify(listing=new_listing.serialize()), 201)

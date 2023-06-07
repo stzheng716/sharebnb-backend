@@ -1,19 +1,19 @@
 """Seed database with sample data from CSV Files."""
 
 from app import app
-from models import User, db
+from models import  db, Listing
 
 db.drop_all()
 db.create_all()
 
-u1 = User(
-    username="testuser",
-    first_name="firsttest",
-    last_name="lasttest",
-    email="email@gmail.com",
-    password="password",
-    is_host=False
-)
+# u1 = User(
+#     username="testuser",
+#     first_name="firsttest",
+#     last_name="lasttest",
+#     email="email@gmail.com",
+#     password="password",
+#     is_host=False
+# )
 
 # h1 = User(
 #     username="hostuser",
@@ -24,19 +24,19 @@ u1 = User(
 #     isHost="False"
 # )
 
-# l1 = Listing(
-#     id=1,
-#     title="title",
-#     details="details",
-#     street="streetname",
-#     city="cityname",
-#     state="Ca",
-#     zip=12345,
-#     country="USA",
-#     price_per_night=10,
-#     image_url="https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png",
-#     username="hostuser"
-# )
+l1 = Listing(
+    # id=1,
+    title="title",
+    details="details",
+    street="streetname",
+    city="cityname",
+    state="Ca",
+    zip=12345,
+    country="USA",
+    price_per_night=10,
+    image_url="https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png"
+    # username="hostuser"
+)
 
 # b1 = Booking(
 #     id=1,
@@ -54,5 +54,5 @@ u1 = User(
 #     body="body of message",
 #     sent_at_date = "2008-11-12 11:12:01"
 # )
-db.session.add(u1)
+db.session.add(l1)
 db.session.commit()
