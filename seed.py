@@ -1,19 +1,58 @@
-# """Seed database with sample data from CSV Files."""
+"""Seed database with sample data from CSV Files."""
 
-# from csv import DictReader
-# from app import db
-# from models import User, Message, Follow, Like
+from app import app
+from models import User, db
 
-# db.drop_all()
-# db.create_all()
+db.drop_all()
+db.create_all()
 
-# with open('generator/users.csv') as users:
-#     db.session.bulk_insert_mappings(User, DictReader(users))
+u1 = User(
+    username="testuser",
+    first_name="firsttest",
+    last_name="lasttest",
+    email="email@gmail.com",
+    password="password",
+    is_host=False
+)
 
-# with open('generator/messages.csv') as messages:
-#     db.session.bulk_insert_mappings(Message, DictReader(messages))
+# h1 = User(
+#     username="hostuser",
+#     first_name="firsttest",
+#     last_name="lasttest",
+#     email="email@gmail.com",
+#     password="password",
+#     isHost="False"
+# )
 
-# with open('generator/follows.csv') as follows:
-#     db.session.bulk_insert_mappings(Follow, DictReader(follows))
+# l1 = Listing(
+#     id=1,
+#     title="title",
+#     details="details",
+#     street="streetname",
+#     city="cityname",
+#     state="Ca",
+#     zip=12345,
+#     country="USA",
+#     price_per_night=10,
+#     image_url="https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png",
+#     username="hostuser"
+# )
 
-# db.session.commit()
+# b1 = Booking(
+#     id=1,
+#     username="testuser",
+#     property_id=1,
+#     check_in_date="2008-11-09 15:45:21",
+#     check_out_date="2008-11-11 11:12:01",
+#     booking_price_per_night=9,
+# )
+
+# m1 = Message(
+#     id=1,
+#     from_username="testuser",
+#     property_id=1,
+#     body="body of message",
+#     sent_at_date = "2008-11-12 11:12:01"
+# )
+db.session.add(u1)
+db.session.commit()

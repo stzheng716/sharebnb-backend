@@ -4,92 +4,91 @@ from flask_bcrypt import Bcrypt
 db = SQLAlchemy()
 
 DEFAULT_IMAGE_URL = (
-    "https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png" +
-    "default-user-icon-28.jpg")
+    "https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png")
 
 
-class User(db.Model):
-    """User in the shareBnb."""
+# class User(db.Model):
+#     """User in the shareBnb."""
 
-    __tablename__ = 'users'
+#     __tablename__ = 'users'
 
-    username = db.Column(
-        db.String(30),
-        primary_key=True
-    )
+#     username = db.Column(
+#         db.String(30),
+#         primary_key=True
+#     )
 
-    first_name = db.Column(
-        db.String(25),
-        nullable=False
-    )
+#     first_name = db.Column(
+#         db.String(25),
+#         nullable=False
+#     )
 
-    last_name = db.Column(
-        db.String(25),
-        nullable=False
-    )
+#     last_name = db.Column(
+#         db.String(25),
+#         nullable=False
+#     )
 
-    email = db.Column(
-        db.String(50),
-        nullable=False,
-        unique=True,
-    )
+#     email = db.Column(
+#         db.String(50),
+#         nullable=False,
+#         unique=True,
+#     )
 
-    password = db.Column(
-        db.String(100),
-        nullable=False,
-    )
+#     password = db.Column(
+#         db.String(100),
+#         nullable=False,
+#     )
 
-    is_host = db.Column(
-        db.boolean,
-        nullable=False,
-        default="False",
-    )
+#     is_host = db.Column(
+#         db.Boolean,
+#         nullable=False,
+#         default="False",
+#     )
 
-    listing = db.relationship('Listing', backref="host")
+#     # listing = db.relationship('Listing', backref="host")
     
-    booking = db.relationship('Booking', backref="guest")
+#     # booking = db.relationship('Booking', backref="guest")
 
-    @classmethod
-    def signup(cls, username, first_name, last_name, email, password, isHost):
-        """Sign up user.
+#     @classmethod
+#     def signup(cls, username, first_name, last_name, email, password, isHost):
+#         """Sign up user.
 
-        Hashes password and adds user to session.
-        """
+#         Hashes password and adds user to session.
+#         """
 
-        hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
+#         hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
 
-        user = User(
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            password=hashed_pwd,
-            isHost=isHost,
-        )
+#         user = User(
+#             username=username,
+#             first_name=first_name,
+#             last_name=last_name,
+#             email=email,
+#             password=hashed_pwd,
+#             isHost=isHost,
+#         )
 
-        db.session.add(user)
-        return user
+#         db.session.add(user)
+#         return user
 
-    @classmethod
-    def authenticate(cls, username, password):
-        """Find user with `username` and `password`.
+#     @classmethod
+#     def authenticate(cls, username, password):
+#         """Find user with `username` and `password`.
 
-        This is a class method (call it on the class, not an individual user.)
-        It searches for a user whose password hash matches this password
-        and, if it finds such a user, returns that user object.
+#         This is a class method (call it on the class, not an individual user.)
+#         It searches for a user whose password hash matches this password
+#         and, if it finds such a user, returns that user object.
 
-        If this can't find matching user (or if password is wrong), returns
-        False.
-        """
+#         If this can't find matching user (or if password is wrong), returns
+#         False.
+#         """
 
-        user = cls.query.filter_by(username=username).one_or_none()
+#         user = cls.query.filter_by(username=username).one_or_none()
 
-        if user:
-            is_auth = bcrypt.check_password_hash(user.password, password)
-            if is_auth:
-                return user
+#         if user:
+#             is_auth = bcrypt.check_password_hash(user.password, password)
+#             if is_auth:
+#                 return user
 
-        return False
+#         return False
 
 class Listing(db.Model):
 
@@ -100,45 +99,45 @@ class Listing(db.Model):
         primary_key=True
     )
 
-    title = db.Column(
-        db.String(40),
-        nullable=False
-    )
+    # title = db.Column(
+    #     db.String(40),
+    #     nullable=False
+    # )
 
-    details = db.Column(
-        db.Text,
-        nullable=False
-    )
+    # details = db.Column(
+    #     db.Text,
+    #     nullable=False
+    # )
 
-    street = db.Column(
-        db.String(50),
-        nullable=False
-    )
+    # street = db.Column(
+    #     db.String(50),
+    #     nullable=False
+    # )
 
-    city = db.Column(
-        db.String(30),
-        nullable=False
-    )
+    # city = db.Column(
+    #     db.String(30),
+    #     nullable=False
+    # )
 
-    state = db.Column(
-        db.String(2),
-        nullable=False
-    )
+    # state = db.Column(
+    #     db.String(2),
+    #     nullable=False
+    # )
 
-    zip = db.Column(
-        db.Integer,
-        nullable=False
-    )
+    # zip = db.Column(
+    #     db.Integer,
+    #     nullable=False
+    # )
 
-    country = db.Column(
-        db.String(3),
-        nullable=False
-    )
+    # country = db.Column(
+    #     db.String(3),
+    #     nullable=False
+    # )
 
-    price_per_night = db.Column(
-        db.Integer,
-        nullable=False
-    )
+    # price_per_night = db.Column(
+    #     db.Integer,
+    #     nullable=False
+    # )
 
     image_url = db.Column(
         db.String(255),
@@ -146,83 +145,83 @@ class Listing(db.Model):
         default=DEFAULT_IMAGE_URL,
     )
 
-    username = db.Column(
-        db.String(30),
-        db.ForeignKey('users.username'),
-        nullable=False,
-    )
+    # username = db.Column(
+    #     db.String(30),
+    #     db.ForeignKey('users.username'),
+    #     nullable=False,
+    # )
 
-class Booking(db.Model):
+# class Booking(db.Model):
 
-    __tablename__= 'bookings'
+#     __tablename__= 'bookings'
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+#     id = db.Column(
+#         db.Integer,
+#         primary_key=True
+#     )
 
-    username = db.Column(
-        db.String(30),
-        db.ForeignKey('users.username'),
-        nullable=False,
-    )
+#     username = db.Column(
+#         db.String(30),
+#         db.ForeignKey('users.username'),
+#         nullable=False,
+#     )
 
-    property_id = db.Column(
-        db.Integer,
-        db.ForeignKey('listings.id'),
-        nullable=False,
-    )
+#     property_id = db.Column(
+#         db.Integer,
+#         db.ForeignKey('listings.id'),
+#         nullable=False,
+#     )
 
-    check_in_date = db.Column(
-        db.DateTime,
-        nullable=False
-    )
+#     check_in_date = db.Column(
+#         db.DateTime,
+#         nullable=False
+#     )
 
-    check_out_date = db.Column(
-        db.DateTime,
-        nullable=False
-    )
+#     check_out_date = db.Column(
+#         db.DateTime,
+#         nullable=False
+#     )
 
-    booking_price_per_night = db.Column(
-        db.Integer,
-        nullable=False
-    )
+#     booking_price_per_night = db.Column(
+#         db.Integer,
+#         nullable=False
+#     )
 
-    property_id = db.relationship('Listing', backref='bookings')
+#     property_id = db.relationship('Listing', backref='bookings')
 
-class Message(db.Model):
+# class Message(db.Model):
 
-    __tablename__= 'messages'
+#     __tablename__= 'messages'
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+#     id = db.Column(
+#         db.Integer,
+#         primary_key=True
+#     )
 
-    from_username = db.Column(
-        db.String(30),
-        db.ForeignKey('users.username'),
-        nullable=False,
-    )
+#     from_username = db.Column(
+#         db.String(30),
+#         db.ForeignKey('users.username'),
+#         nullable=False,
+#     )
 
-    property_id = db.Column(
-        db.Integer,
-        db.ForeignKey('listings.id'),
-        nullable=False,
-    )
+#     property_id = db.Column(
+#         db.Integer,
+#         db.ForeignKey('listings.id'),
+#         nullable=False,
+#     )
 
-    body = db.Column(
-        db.Text,
-        nullable=False
-    )
+#     body = db.Column(
+#         db.Text,
+#         nullable=False
+#     )
 
-    sent_at_date = db.Column(
-        db.DateTime,
-        nullable=False
-    )
+#     sent_at_date = db.Column(
+#         db.DateTime,
+#         nullable=False
+#     )
 
-    from_username = db.relationship('User', backref="sent_message")
-    listing = db.relationship('Listing', backref="messages")
+#     from_username = db.relationship('User', backref="sent_message")
+#     listing = db.relationship('Listing', backref="messages")
 
 
 
