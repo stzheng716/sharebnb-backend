@@ -92,7 +92,7 @@ class User(db.Model):
         return False
 
 class Listing(db.Model):
-    
+
     __tablename__= 'listings'
 
     id = db.Column(
@@ -153,7 +153,7 @@ class Listing(db.Model):
     )
 
 class Booking(db.Model):
-    
+
     __tablename__= 'bookings'
 
     id = db.Column(
@@ -189,7 +189,7 @@ class Booking(db.Model):
     )
 
 class Message(db.Model):
-    
+
     __tablename__= 'messages'
 
     id = db.Column(
@@ -231,11 +231,11 @@ class Message(db.Model):
 #     bucket = db.Column(db.String(100))
 #     region = db.Column(db.String(100))
 
-# def connect_db(app):
-#     """Connect this database to provided Flask app.
-#     You should call this in your Flask app.
-#     """
+def connect_db(app):
+    """Connect this database to provided Flask app.
+    You should call this in your Flask app.
+    """
 
-#     app.app_context().push()
-#     db.app = app
-#     db.init_app(app)
+    app.app_context().push()
+    db.app = app
+    db.init_app(app)
