@@ -59,8 +59,8 @@ def signup():
 
     return (jsonify(token=encoded_jwt), 201)
 
-   
-        
+
+
 
 @app.post('/auth/login')
 def login():
@@ -87,20 +87,28 @@ def login():
 def get_user(username):
 
     user = User.query.get_or_404(username)
+    json_user = user.serialize()
+
     if user and user.listing:
-            json_user = user.serialize()
             listings = [listing.serialize() for listing in user.listing]
             json_user['listing'] = listings
-            return jsonify(user=json_user)
 
-    return jsonify(user=json_user.serialize())
+    if user and user.booking:
+            bookings = [booking.serialize() for booking in user.booking]
+            json_user['booking'] = bookings
+
+    if user and user.sent_messages:
+            sent_messages = [sent_message.serialize() for sent_message in user.sent_messages]
+            json_user['sent_message'] = sent_messages
+
+    return jsonify(user=json_user)
 
 
 @app.get('/users')
 def get_users():
 
     users = [user.serialize() for user in User.query.all()]
-    
+
     return jsonify(user=users)
 
 
@@ -141,24 +149,54 @@ def delete_user(username):
 
 @app.post('/listings')
 def create_listing():
-
+    """create a listing by receiving {
+                "city": "city value",
+                "country": "USA",
+                "details": "details value",
+                "image": an image file,
+                "price_per_night": 200,
+                "state": "ca",
+                "street": "street value",
+                "title": "house2",
+                "username": "testuser1",
+                "zip": 12345
+            }
+       return a json
+            {
+            "listing": {
+                "city": "city value",
+                "country": "USA",
+                "details": "details value",
+                "id": 5,
+                "image_url": "https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png",
+                "price_per_night": 200,
+                "state": "ca",
+                "street": "street value",
+                "title": "house2",
+                "username": "testuser1",
+                "zip": 12345
+            }
+        } """
     image = request.files.get('image', None)
 
     form = request.form
 
-    image_url = uploadFileToS3(image)
-    full_url = f"{AMAZON_BASE_URL}/{image_url}"
+    full_url = None
+
+    if image:
+        image_url = uploadFileToS3(image)
+        full_url = f"{AMAZON_BASE_URL}/{image_url}"
 
     new_listing = Listing(
-        title=form['title'], 
-        details=form['details'], 
-        street=form['street'], 
-        city=form['city'], 
-        state=form['state'], 
-        zip=form['zip'], 
-        country=form['country'], 
-        price_per_night=form['price_per_night'], 
-        image_url=full_url, 
+        title=form['title'],
+        details=form['details'],
+        street=form['street'],
+        city=form['city'],
+        state=form['state'],
+        zip=form['zip'],
+        country=form['country'],
+        price_per_night=form['price_per_night'],
+        image_url=full_url,
         username=form['username'])
 
     db.session.add(new_listing)
@@ -172,7 +210,7 @@ def update_listing(id):
 
     image = request.files.get('image', None)
     form = request.form
-    
+
     full_url = None
 
     if image:
@@ -180,14 +218,14 @@ def update_listing(id):
         full_url = f"{AMAZON_BASE_URL}/{image_url}"
 
     if listing:
-        listing.title=form.get('title', listing.title), 
-        listing.details=form.get('details', listing.details), 
-        listing.street=form.get('street', listing.street), 
-        listing.city=form.get('city', listing.city), 
-        listing.state=form.get('state', listing.state), 
-        listing.zip=form.get('zip', listing.zip), 
-        listing.country=form.get('country', listing.country), 
-        listing.price_per_night=form.get('price_per_night', listing.price_per_night), 
+        listing.title=form.get('title', listing.title),
+        listing.details=form.get('details', listing.details),
+        listing.street=form.get('street', listing.street),
+        listing.city=form.get('city', listing.city),
+        listing.state=form.get('state', listing.state),
+        listing.zip=form.get('zip', listing.zip),
+        listing.country=form.get('country', listing.country),
+        listing.price_per_night=form.get('price_per_night', listing.price_per_night),
         listing.image_url= full_url or listing.image_url
         listing.username=form.get('username', listing.username)
 
@@ -212,6 +250,10 @@ def get_listing(id):
 
     if listing and listing.bookings:
         json_listing = listing.serialize()
+
+        if listing and listing.messages:
+             json_listing['messages'] = [message.serialize() for message in listing.messages]
+
         json_listing['bookings'] = [booking.serialize() for booking in listing.bookings]
         return jsonify(listing=json_listing)
 
@@ -232,9 +274,24 @@ def delete_listing(id):
 ##############################################################################
 #  Message routes:
 
+
 @app.post('/messages')
 def create_message():
-    
+    """create a message by receiving
+    {
+	"body":"hfsadfello",
+	"property_id":"1",
+	"from_username":"testuser2"
+}
+    return a json
+        {
+	"message": {
+		"body": "hfsadfello",
+		"id": 2,
+		"sent_at_date": "Thu, 08 Jun 2023 10:03:32 GMT"
+	}
+} """
+
     data = request.json
 
     body = data['body']
@@ -250,9 +307,9 @@ def create_message():
 
 @app.get('/messages/<int:id>')
 def get_message(id):
-    
+
     message = Message.query.get_or_404(id)
-    
+
     return jsonify(message=message.serialize())
 
 ##############################################################################
@@ -282,17 +339,37 @@ def get_bookings():
 
 @app.post('/bookings')
 def create_booking():
+    """create a booking by receiving
+        {
+        "username":"testuser2",
+        "property_id":"1",
+        "check_in_date": "2008-11-09 15:45:21",
+        "check_out_date": "2008-11-11 11:12:01",
+        "booking_price_per_night":"5"
+    }
+
+    return a json
+   {
+	"booking": {
+		"booking_price_per_night": 5,
+		"check_in_date": "Sun, 09 Nov 2008 15:45:21 GMT",
+		"check_out_date": "Tue, 11 Nov 2008 11:12:01 GMT",
+		"id": 2,
+		"property_id": 1,
+		"username": "testuser2"
+	}
+} """
 
     data = request.json
 
     booking = Booking(
-        username=data['username'], 
-        property_id=data['property_id'], 
-        check_in_date=data['check_in_date'], 
-        check_out_date=data['check_out_date'], 
+        username=data['username'],
+        property_id=data['property_id'],
+        check_in_date=data['check_in_date'],
+        check_out_date=data['check_out_date'],
         booking_price_per_night=data['booking_price_per_night']
         )
-    
+
     db.session.add(booking)
     db.session.commit()
 

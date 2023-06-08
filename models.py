@@ -90,7 +90,7 @@ class User(db.Model):
                 return user
 
         return False
-    
+
     def serialize(self):
         """Serialize to dictionary."""
 
@@ -158,10 +158,10 @@ class Listing(db.Model):
         nullable=False,
         default=DEFAULT_IMAGE_URL,
     )
-    
+
     username = db.Column(
         db.String(30),
-        db.ForeignKey('users.username'),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
         nullable=False,
     )
 
@@ -195,13 +195,13 @@ class Booking(db.Model):
 
     username = db.Column(
         db.String(30),
-        db.ForeignKey('users.username'),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
         nullable=False,
     )
 
     property_id = db.Column(
         db.Integer,
-        db.ForeignKey('listings.id'),
+        db.ForeignKey('listings.id', ondelete='CASCADE'),
         nullable=False,
     )
 
@@ -232,7 +232,7 @@ class Booking(db.Model):
             'check_in_date': self.check_in_date,
             'check_out_date': self.check_out_date,
             'booking_price_per_night': self.booking_price_per_night,
-            
+
         }
 
 class Message(db.Model):
@@ -247,13 +247,13 @@ class Message(db.Model):
 
     from_username = db.Column(
         db.String(30),
-        db.ForeignKey('users.username'),
+        db.ForeignKey('users.username', ondelete='CASCADE'),
         nullable=False,
     )
 
     property_id = db.Column(
         db.Integer,
-        db.ForeignKey('listings.id'),
+        db.ForeignKey('listings.id', ondelete='CASCADE'),
         nullable=False,
     )
 
@@ -268,7 +268,7 @@ class Message(db.Model):
         default=datetime.now()
     )
 
-    from_user = db.relationship('User', backref="sent_message")
+    from_user = db.relationship('User', backref="sent_messages")
     listing = db.relationship('Listing', backref="messages")
 
 

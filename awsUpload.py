@@ -7,7 +7,7 @@ import logging
 
 load_dotenv()
 
-BUCKET_NAME = "sharebnb-bucket2"
+BUCKET_NAME = os.environ["BUCKET_NAME"]
 ALLOWED_EXTENSIONS = {'png', 'jpeg', 'jpg'}
 
 # def allowed_file(filename):
@@ -22,9 +22,6 @@ def uploadFileToS3(file):
     #     return "FILE NOT ALLOWED!"
 
     new_filename = uuid.uuid4().hex + '.' + uploaded_file.filename.rsplit('.', 1)[1].lower()
-
-    # should put bucket name in .env
-    BUCKET_NAME = "sharebnb-bucket"
 
     s3 = boto3.client(
         "s3",

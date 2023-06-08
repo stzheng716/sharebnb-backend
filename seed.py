@@ -1,4 +1,4 @@
-"""Seed database with sample data from CSV Files."""
+"""Seed database with sample data"""
 
 from app import app
 from models import  db, Listing, User, Message, Booking
@@ -54,10 +54,12 @@ m1 = Message(
     sent_at_date = "2008-11-12 11:12:01"
 )
 
-# db.session.add_all([u1,h1])
-# db.session.commit()
-# db.session.add_all([l1])
-# db.session.commit()
+#TODO: how to seed data in specific order?
+
+db.session.add_all([u1,h1])
+db.session.commit()
+db.session.add_all([l1])
+db.session.commit()
 db.session.add_all([m1])
 db.session.commit()
 
