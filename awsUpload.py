@@ -17,14 +17,14 @@ aws_access_key_id = os.environ['aws_access_key_id']
 aws_secret_access_key = os.environ['aws_secret_access_key']
 
 def uploadFileToS3(file):
-    # TODO: figure out how to grab the file from front-end
     uploaded_file = file
     # if not allowed_file(uploaded_file.filename):
     #     return "FILE NOT ALLOWED!"
 
     new_filename = uuid.uuid4().hex + '.' + uploaded_file.filename.rsplit('.', 1)[1].lower()
 
-    BUCKET_NAME = "sharebnb-bucket2"
+    # should put bucket name in .env
+    BUCKET_NAME = "sharebnb-bucket"
 
     s3 = boto3.client(
         "s3",

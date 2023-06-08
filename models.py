@@ -48,7 +48,7 @@ class User(db.Model):
 
     listing = db.relationship('Listing', backref='host')
 
-    # booking = db.relationship('Booking', backref="guest")
+    booking = db.relationship('Booking', backref="guest")
 
     @classmethod
     def signup(cls, username, first_name, last_name, email, password, is_host):

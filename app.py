@@ -5,16 +5,18 @@ from flask_sqlalchemy import SQLAlchemy
 from models import db, connect_db, Listing, User, Message, Booking
 from sqlalchemy.exc import IntegrityError
 from awsUpload import uploadFileToS3
-# from tokens import createToken, authenitcateJWT
+from jsonschema import validate
+from schemas.userschema import userschema
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import current_user
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 
-AMAZON_BASE_URL = "https://sharebnb-bucket2.s3.us-west-1.amazonaws.com"
+AMAZON_BASE_URL = "https://sharebnb-bucket.s3.us-west-1.amazonaws.com"
 
 app = Flask(__name__)
+
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql:///sharebnb")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
@@ -25,6 +27,14 @@ connect_db(app)
 load_dotenv()
 
 #JWT https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
+
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    identity = jwt_data.get('sub')["username"]
+    return User.query.filter_by(username=identity).one_or_none()
+
+##############################################################################
+# auth routes:
 
 @app.post('/auth/signup')
 def signup():
@@ -42,32 +52,33 @@ def signup():
         email=data.get('email'),
         password=data.get('password'),
         is_host=data.get('isHost')
-        )
-
+    )
     db.session.commit()
 
     encoded_jwt = create_access_token(identity=user.serialize())
-   
+
     return (jsonify(token=encoded_jwt), 201)
+
+   
         
 
-# @app.post('/auth/login')
-# def login():
-#     """Handle user login.
-#     Create new user and add to DB.
-#     If the there already is a user with that username: return josnified error.
-#     """
-#     data = request.json
+@app.post('/auth/login')
+def login():
+    """Handle user login.
+    Create new user and add to DB.
+    If the there already is a user with that username: return josnified error.
+    """
+    data = request.json
 
-#     user = User.authenticate(
-#         username=data['username'],
-#         password=data['password']
-#         )
+    user = User.authenticate(
+        username=data['username'],
+        password=data['password']
+        )
 
-#     if user:
-#         encoded_jwt = create_access_token(identity=user.serialize())
-#         return jsonify(token=encoded_jwt)
-#     return jsonify(error="Invalid credentials")
+    if user:
+        encoded_jwt = create_access_token(identity=user.serialize())
+        return jsonify(token=encoded_jwt)
+    return jsonify(error="Invalid credentials")
 
 ##############################################################################
 # User routes:
@@ -78,6 +89,7 @@ def get_user(username):
     user = User.query.get_or_404(username)
     
     return jsonify(user=user.serialize())
+
 
 @app.get('/users')
 def get_users():
@@ -106,6 +118,7 @@ def update_user(username):
 
     return jsonify(error='You can only update your own profile information')
 
+
 @app.delete('/users/<username>')
 def delete_user(username):
 
@@ -122,9 +135,9 @@ def delete_user(username):
 # Listing routes:
 
 @app.post('/listings')
-def make_listing():
+def create_listing():
 
-    image = request.files['image']
+    image = request.files.get('image', None)
 
     form = request.form
 
@@ -148,6 +161,37 @@ def make_listing():
 
     return (jsonify(listing=new_listing.serialize()), 201)
 
+@app.patch('/listings/<int:id>')
+def update_listing(id):
+    listing = Listing.query.get_or_404(id)
+
+    image = request.files.get('image', None)
+    form = request.form
+    
+    full_url = None
+
+    if image:
+        image_url = uploadFileToS3(image)
+        full_url = f"{AMAZON_BASE_URL}/{image_url}"
+
+    if listing:
+        listing.title=form.get('title', listing.title), 
+        listing.details=form.get('details', listing.details), 
+        listing.street=form.get('street', listing.street), 
+        listing.city=form.get('city', listing.city), 
+        listing.state=form.get('state', listing.state), 
+        listing.zip=form.get('zip', listing.zip), 
+        listing.country=form.get('country', listing.country), 
+        listing.price_per_night=form.get('price_per_night', listing.price_per_night), 
+        listing.image_url= full_url or listing.image_url
+        listing.username=form.get('username', listing.username)
+
+    db.session.commit()
+
+    return (jsonify(listing=listing.serialize()), 200)
+
+
+
 @app.get('/listings')
 def get_listings():
 
@@ -155,12 +199,14 @@ def get_listings():
 
     return jsonify(listings=listings)
 
+
 @app.get('/listings/<int:id>')
 def get_listing(id):
 
     listing = Listing.query.get_or_404(id)
 
     return jsonify(listing=listing.serialize())
+
 
 @app.delete('/listings/<int:id>')
 def delete_listing(id):
@@ -191,6 +237,7 @@ def create_message():
 
     return (jsonify(message=message.serialize()), 201)
 
+
 @app.get('/messages/<int:id>')
 def get_message(id):
     
@@ -211,6 +258,18 @@ def get_booking(id):
 
     return jsonify(error='You cannot look at a booking if your not the host or guest')
 
+
+@app.get('/bookings')
+def get_bookings():
+
+    bookings = [booking.serialize() for booking in Booking.query.all()]
+
+    if bookings:
+        return jsonify(booking=bookings)
+
+    return jsonify(error='You cannot look at a booking if your not the host or guest')
+
+
 @app.post('/bookings')
 def create_booking():
 
@@ -229,14 +288,19 @@ def create_booking():
 
     return (jsonify(booking=booking.serialize()), 201)
 
+
 @app.delete('/bookings/<int:id>')
+@jwt_required()
 def delete_booking(id):
 
     booking = Booking.query.get_or_404(id)
 
-    if booking:
-        db.session.delete(booking)
-        db.session.commit()
+    if current_user.username == booking.username:
+        if booking:
+            db.session.delete(booking)
+            db.session.commit()
 
-    return jsonify(message='Deleted booking successfully')
+            return jsonify(message='Deleted booking successfully')
+
+    return jsonify(message='could not delete booking')
 
