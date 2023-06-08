@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from awsUpload import uploadFileToS3
 from jsonschema import validate
 from schemas.userschema import userschema
+from flask_cors import CORS
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import current_user
@@ -16,6 +17,7 @@ from flask_jwt_extended import JWTManager
 AMAZON_BASE_URL = "https://sharebnb-bucket.s3.us-west-1.amazonaws.com"
 
 app = Flask(__name__)
+CORS(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql:///sharebnb")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -199,6 +201,8 @@ def update_listing(id):
 
 @app.get('/listings')
 def get_listings():
+
+    searchTerm = request.args.get('searchTerm')
 
     listings = [listing.serialize() for listing in Listing.query.all()]
 
