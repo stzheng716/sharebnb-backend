@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, redirect, url_for, request, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from models import db, connect_db, Listing
+from models import db, connect_db, Listing, User, Message
 from sqlalchemy.exc import IntegrityError
 from awsUpload import uploadFileToS3
 # import jwt
@@ -20,37 +20,34 @@ connect_db(app)
 # TODO: models
 # TODO: routes
 
+#JWT https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
 
-# install jwt / import jwt - https://pyjwt.readthedocs.io/en/stable/
-# validation for json -
-# create a jsonschema.py file
-#     pip install jsonschema
-#     write a schema for each model
+@app.post('/auth/signup')
+def signup():
+    """Handle user signup.
+    Create new user and add to DB.
+    If the there already is a user with that username: return josnified error.
+    """
 
-# @app.post('/auth/signup')
-# def signup():
-#     """Handle user signup.
-#     Create new user and add to DB.
-#     If the there already is a user with that username: return josnified error.
-#     """
-#     data = request.json
-#     try:
-#             user = User.signup(
-#             username=data.username,
-#             first_name=data.first_name,
-#             last_name=data.last_name,
-#             email=data.email,
-#             password=data.password,
-#             isHost=data.isHost
-#             )
+    data = request.json
 
-#             db.session.commit(user)
+    user = User.signup(
+        username=data['username'],
+        first_name=data['firstName'],
+        last_name=data['lastName'],
+        email=data['email'],
+        password=data['password'],
+        is_host=data['isHost']
+        )
 
-#             # encoded_jwt = createToken(user)
-#             return jsonify(token=encoded_jwt)
+    db.session.commit()
 
-#     except IntegrityError:
-#             return jsonify(error=IntegrityError)
+    return jsonify(user=user.serialize())
+            # encoded_jwt = createToken(user)
+            # return jsonify(token=encoded_jwt)
+
+    # except IntegrityError:
+    #         return jsonify(error=IntegrityError)
 
 # @app.post('/auth/login')
 # def login():
@@ -70,58 +67,45 @@ connect_db(app)
 #         return jsonify(token=encoded_jwt)
 #     return jsonify(error="Invalid credentials")
 
-# @app.get('/users/<username>')
-# def get_user(username):
-#     headers = request.headers
-#     token = headers['token']
+@app.get('/users/<username>')
+def get_user(username):
 
-#     if username == authenitcateJWT(token):
-#         user = User.query.one_or_none(username)
-#         if user:
-#             return jsonify(user=user)
-
-#     return jsonify(error="No user found")
+    user = User.query.get_or_404(username)
+    
+    return jsonify(user=user.serialize())
 
 
-# @app.patch('/users/<username>')
-# def update_user(username):
-#     headers = request.headers
-#     token = headers['token']
 
-#     data = request.json
+@app.patch('/users/<username>')
+def update_user(username):
 
-#     if username == authenitcateJWT(token):
-#         user = User.query.one_or_none(username)
-#         if user:
-#             user.first_name = data.get('firstName', user.first_name)
-#             user.last_name = data.get('lastName', user.last_name)
-#             user.email = data.get('email', user.email)
-#             user.is_host = data.get('isHost', user.is_host)
+    data = request.json
 
-#             db.session.add(user)
-#             db.session.commit()
+    user = User.query.get_or_404(username)
+    if user:
+        user.first_name = data.get('firstName', user.first_name)
+        user.last_name = data.get('lastName', user.last_name)
+        user.email = data.get('email', user.email)
+        user.is_host = bool(data.get('isHost', user.is_host))
 
-#             return jsonify(message="update successful")
+        db.session.add(user)
+        db.session.commit()
 
-#     return jsonify(error="You can only update your own profile information")
+        return jsonify(user=user.serialize())
 
-# @app.delete('/users/<username>')
-# def delete_user(username):
-#     headers = request.headers
-#     token = headers['token']
+    return jsonify(error="You can only update your own profile information")
 
-#     data = request.json
+@app.delete('/users/<username>')
+def delete_user(username):
 
-#     if username == authenitcateJWT(token):
-#         user = User.query.one_or_none(username)
-#         if user:
+    user = User.query.get_or_404(username)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
 
-#             db.session.delete(username)
-#             db.session.commit()
+        return jsonify(message="delete successfully")
 
-#             return jsonify(message="delete successfully")
-
-#     return jsonify(error="You can only delete your own profile information")
+    return jsonify(error="You can only delete your own profile information")
 
 
 # @app.get('/bookings/<int:id>')
@@ -139,9 +123,9 @@ connect_db(app)
 #         return jsonify(booking=booking)
 
 #     return jsonify(error="You can't look at a booking if your not the host or guest")
+
 @app.post('/listings')
 def make_listing():
-    # breakpoint()
 
     file = request.files['image']
 
@@ -164,3 +148,28 @@ def make_listing():
     db.session.commit()
 
     return (jsonify(listing=new_listing.serialize()), 201)
+
+@app.get('/listings')
+def get_listings():
+
+    listings = [listing.serialize() for listing in Listing.query.all()]
+
+    return jsonify(listings=listings)
+
+@app.get('/listings/<int:id>')
+def get_listing(id):
+
+    listing = Listing.query.get(id)
+
+    return jsonify(listing=listing.serialize())
+
+@app.post('/messages')
+def create_message():
+    
+    data = request.json
+
+    body = data['body']
+
+    message = Message(body=body)
+
+    return jsonify(message=message.serialize())
