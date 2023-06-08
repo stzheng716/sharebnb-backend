@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 
+bcrypt = Bcrypt()
 db = SQLAlchemy()
 
 DEFAULT_IMAGE_URL = (
@@ -42,10 +43,10 @@ class User(db.Model):
     is_host = db.Column(
         db.Boolean,
         nullable=False,
-        default="False",
+        default=False,
     )
 
-    # listing = db.relationship('Listing', backref="host")
+    listing = db.relationship('Listing', backref='host')
 
     # booking = db.relationship('Booking', backref="guest")
 
@@ -55,14 +56,14 @@ class User(db.Model):
 
         Hashes password and adds user to session.
         """
-        # hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
+        hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
 
         user = User(
             username=username,
             first_name=first_name,
             last_name=last_name,
             email=email,
-            password=password,
+            password=hashed_pwd,
             is_host=bool(is_host),
         )
 
@@ -94,11 +95,11 @@ class User(db.Model):
         """Serialize to dictionary."""
 
         return {
-            "username": self.username,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
-            "email": self.email,
-            "is_host": self.is_host,
+            'username': self.username,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'email': self.email,
+            'is_host': self.is_host,
         }
 
 
@@ -168,56 +169,70 @@ class Listing(db.Model):
         """Serialize to dictionary."""
 
         return {
-            "id": self.id,
-            "title": self.title,
-            "details": self.details,
-            "street": self.street,
-            "city": self.city,
-            "state": self.state,
-            "zip": self.zip,
-            "country": self.country,
-            "price_per_night": self.price_per_night,
-            "image_url": self.image_url
+            'id': self.id,
+            'title': self.title,
+            'details': self.details,
+            'street': self.street,
+            'city': self.city,
+            'state': self.state,
+            'zip': self.zip,
+            'country': self.country,
+            'price_per_night': self.price_per_night,
+            'image_url': self.image_url
         }
 
 
-# class Booking(db.Model):
+class Booking(db.Model):
 
-#     __tablename__= 'bookings'
+    __tablename__= 'bookings'
 
-#     id = db.Column(
-#         db.Integer,
-#         primary_key=True
-#     )
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+        autoincrement=True
+    )
 
-#     username = db.Column(
-#         db.String(30),
-#         db.ForeignKey('users.username'),
-#         nullable=False,
-#     )
+    username = db.Column(
+        db.String(30),
+        db.ForeignKey('users.username'),
+        nullable=False,
+    )
 
-#     property_id = db.Column(
-#         db.Integer,
-#         db.ForeignKey('listings.id'),
-#         nullable=False,
-#     )
+    property_id = db.Column(
+        db.Integer,
+        db.ForeignKey('listings.id'),
+        nullable=False,
+    )
 
-#     check_in_date = db.Column(
-#         db.DateTime,
-#         nullable=False
-#     )
+    check_in_date = db.Column(
+        db.DateTime,
+        nullable=False
+    )
 
-#     check_out_date = db.Column(
-#         db.DateTime,
-#         nullable=False
-#     )
+    check_out_date = db.Column(
+        db.DateTime,
+        nullable=False
+    )
 
-#     booking_price_per_night = db.Column(
-#         db.Integer,
-#         nullable=False
-#     )
+    booking_price_per_night = db.Column(
+        db.Integer,
+        nullable=False
+    )
 
-#     property_id = db.relationship('Listing', backref='bookings')
+    property = db.relationship('Listing', backref='bookings')
+
+    def serialize(self):
+        """Serialize to dictionary."""
+
+        return {
+            'id': self.id,
+            'username': self.username,
+            'property_id': self.property_id,
+            'check_in_date': self.check_in_date,
+            'check_out_date': self.check_out_date,
+            'booking_price_per_night': self.booking_price_per_night,
+            
+        }
 
 class Message(db.Model):
 
@@ -252,8 +267,8 @@ class Message(db.Model):
         default=datetime.now()
     )
 
-    # from_username = db.relationship('User', backref="sent_message")
-    # listing = db.relationship('Listing', backref="messages")
+    from_user = db.relationship('User', backref="sent_message")
+    listing = db.relationship('Listing', backref="messages")
 
 
     def serialize(self):
@@ -264,19 +279,6 @@ class Message(db.Model):
             "body": self.body,
             "sent_at_date": self.sent_at_date,
         }
-
-
-
-
-# class File(db.Model):
-
-#     __tablename__= 'files'
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     original_filename = db.Column(db.String(100))
-#     filename = db.Column(db.String(100))
-#     bucket = db.Column(db.String(100))
-#     region = db.Column(db.String(100))
 
 def connect_db(app):
     """Connect this database to provided Flask app.
