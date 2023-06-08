@@ -178,7 +178,8 @@ class Listing(db.Model):
             'zip': self.zip,
             'country': self.country,
             'price_per_night': self.price_per_night,
-            'image_url': self.image_url
+            'image_url': self.image_url,
+            'username': self.username
         }
 
 

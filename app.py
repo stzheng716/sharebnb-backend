@@ -87,8 +87,13 @@ def login():
 def get_user(username):
 
     user = User.query.get_or_404(username)
-    
-    return jsonify(user=user.serialize())
+    if user and user.listing:
+            json_user = user.serialize()
+            listings = [listing.serialize() for listing in user.listing]
+            json_user['listing'] = listings
+            return jsonify(user=json_user)
+
+    return jsonify(user=json_user.serialize())
 
 
 @app.get('/users')
@@ -204,6 +209,11 @@ def get_listings():
 def get_listing(id):
 
     listing = Listing.query.get_or_404(id)
+
+    if listing and listing.bookings:
+        json_listing = listing.serialize()
+        json_listing['bookings'] = [booking.serialize() for booking in listing.bookings]
+        return jsonify(listing=json_listing)
 
     return jsonify(listing=listing.serialize())
 
