@@ -185,8 +185,11 @@ def create_listing():
 
     form = request.form
 
-    image_url = uploadFileToS3(image)
-    full_url = f"{AMAZON_BASE_URL}/{image_url}"
+    full_url = None
+
+    if image:
+        image_url = uploadFileToS3(image)
+        full_url = f"{AMAZON_BASE_URL}/{image_url}"
 
     new_listing = Listing(
         title=form['title'],
