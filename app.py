@@ -146,10 +146,15 @@ def create_listing():
 
     image = request.files.get('image', None)
 
+    print("IMAGE", request.files.get('image', None))
+
     form = request.form
 
-    image_url = uploadFileToS3(image)
-    full_url = f"{AMAZON_BASE_URL}/{image_url}"
+    full_url= None
+
+    if image:
+        image_url = uploadFileToS3(image)
+        full_url = f"{AMAZON_BASE_URL}/{image_url}"
 
     new_listing = Listing(
         title=form['title'], 
@@ -202,7 +207,12 @@ def update_listing(id):
 @app.get('/listings')
 def get_listings():
 
-    searchTerm = request.args.get('searchTerm')
+    searchTerm = request.args.get('q')
+
+    if searchTerm:
+
+        filtered_listing = [listing.serialize() for listing in Listing.query.filter_by(title=searchTerm)]
+        return jsonify(listings=filtered_listing)
 
     listings = [listing.serialize() for listing in Listing.query.all()]
 

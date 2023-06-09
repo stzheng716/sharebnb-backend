@@ -18,6 +18,7 @@ aws_secret_access_key = os.environ['aws_secret_access_key']
 
 def uploadFileToS3(file):
     uploaded_file = file
+    print("UPLOADED FILE", uploaded_file)
     # if not allowed_file(uploaded_file.filename):
     #     return "FILE NOT ALLOWED!"
 

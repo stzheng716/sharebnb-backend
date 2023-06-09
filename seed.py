@@ -54,10 +54,10 @@ m1 = Message(
     sent_at_date = "2008-11-12 11:12:01"
 )
 
-# db.session.add_all([u1,h1])
-# db.session.commit()
-# db.session.add_all([l1])
-# db.session.commit()
+db.session.add_all([u1,h1])
+db.session.commit()
+db.session.add_all([l1])
+db.session.commit()
 db.session.add_all([m1])
 db.session.commit()
 
