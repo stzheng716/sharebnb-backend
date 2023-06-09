@@ -54,11 +54,6 @@ m1 = Message(
     sent_at_date = "2008-11-12 11:12:01"
 )
 
-<<<<<<< HEAD
-#TODO: how to seed data in specific order?
-
-=======
->>>>>>> 8a36595c5ad651848e3691b029a81af9b2eac94e
 db.session.add_all([u1,h1])
 db.session.commit()
 db.session.add_all([l1])

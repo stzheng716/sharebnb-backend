@@ -17,8 +17,13 @@ aws_access_key_id = os.environ['aws_access_key_id']
 aws_secret_access_key = os.environ['aws_secret_access_key']
 
 def uploadFileToS3(file):
+
+    """
+    Takes a file, set a new file name based, upload to a Amazon s3 bucket.
+    Returns the new file name 
+    """
+
     uploaded_file = file
-    print("UPLOADED FILE", uploaded_file)
     # if not allowed_file(uploaded_file.filename):
     #     return "FILE NOT ALLOWED!"
 
@@ -38,12 +43,3 @@ def uploadFileToS3(file):
         logging.error(e)
         return False
 
-    # object_url = s3.generate_presigned_url(
-    # ClientMethod='get_object',
-    # Params={
-    #     'Bucket': BUCKET_NAME,
-    #     'Key': new_filename
-    #     }
-    #     )
-
-    # print("object_url =", object_url)

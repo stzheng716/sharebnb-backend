@@ -42,10 +42,14 @@ def user_lookup_callback(_jwt_header, jwt_data):
 def signup():
     """Handle user signup.
     Create new user and add to DB.
-    If the there already is a user with that username: return josnified error.
+    Returns
+        {
+            token: "asdfasfafd24...."
+        }
     """
 
     data = request.json
+
 
     user = User.signup(
         username=data.get('username'),
@@ -62,13 +66,14 @@ def signup():
     return (jsonify(token=encoded_jwt), 201)
 
 
-
-
 @app.post('/auth/login')
 def login():
     """Handle user login.
-    Create new user and add to DB.
-    If the there already is a user with that username: return josnified error.
+    Verify if the user information. If valid returns a json web token
+    Returns
+        {
+            token: "asdfasfafd..."
+        }
     """
     data = request.json
 
@@ -87,6 +92,16 @@ def login():
 
 @app.get('/users/<username>')
 def get_user(username):
+    """Get a user from database and returns.
+    returns
+    {
+        "user": {
+            "username", "email", "first_name", "is_host", "last_name",
+            "sent_message": [message, message],
+            "listing": [listing, listing],
+        }
+    }
+    """
 
     user = User.query.get_or_404(username)
     json_user = user.serialize()
@@ -108,6 +123,11 @@ def get_user(username):
 
 @app.get('/users')
 def get_users():
+    """Get all user from database and returns an json with a list of users
+    {
+        "users": [{user}, {user}, {user}]
+    }
+    """
 
     users = [user.serialize() for user in User.query.all()]
 
@@ -116,6 +136,13 @@ def get_users():
 
 @app.patch('/users/<username>')
 def update_user(username):
+    """Update user from data in request. Returns updated data.
+
+    Take in a json and returns the updated user
+    return a json
+        {"user": {"username", "first_name", "last_name", "email", "is_host",}
+        } 
+    """
 
     data = request.json
 
@@ -136,6 +163,10 @@ def update_user(username):
 
 @app.delete('/users/<username>')
 def delete_user(username):
+    """Delete user and return confirmation message.
+
+    Returns JSON of {message: "delete successfully"}
+    """
 
     user = User.query.get_or_404(username)
     if user:
@@ -151,37 +182,18 @@ def delete_user(username):
 
 @app.post('/listings')
 def create_listing():
-    """create a listing by receiving {
-                "city": "city value",
-                "country": "USA",
-                "details": "details value",
-                "image": an image file,
-                "price_per_night": 200,
-                "state": "ca",
-                "street": "street value",
-                "title": "house2",
-                "username": "testuser1",
-                "zip": 12345
-            }
-       return a json
-            {
-            "listing": {
-                "city": "city value",
-                "country": "USA",
-                "details": "details value",
-                "id": 5,
-                "image_url": "https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png",
-                "price_per_night": 200,
-                "state": "ca",
-                "street": "street value",
-                "title": "house2",
-                "username": "testuser1",
-                "zip": 12345
-            }
-        } """
+    """create a listing by receiving 
+        {
+            "city", "country", "details", "image", "price_per_night", "state",
+            "street", "title", "username", "zip"
+        }
+    return a json
+        {
+        "listing": {"city", "country", "details", "id", "image_url", "price_per_night",
+            "state", "street", "title", "username", "zip"}
+        } 
+    """
     image = request.files.get('image', None)
-
-    print("IMAGE", request.files.get('image', None))
 
     form = request.form
 
@@ -210,6 +222,15 @@ def create_listing():
 
 @app.patch('/listings/<int:id>')
 def update_listing(id):
+    """Update listing from data in request. Returns updated data.
+
+    Take in a json and returns the updated listing
+    return a json
+        {"listing": {"city", "country", "details", "id", "image_url", 
+        "price_per_night", "state", "street", "title", "username", "zip"}
+        } 
+    """
+
     listing = Listing.query.get_or_404(id)
 
     image = request.files.get('image', None)
@@ -241,11 +262,18 @@ def update_listing(id):
 
 @app.get('/listings')
 def get_listings():
+    """Get all listings from database or filter if there is a query string passed in 
+    returns an json with a list of users
+    {
+        "listings": [{listing}, {listing}, {listing}]
+    }
+    """
+    
 
     searchTerm = request.args.get('q', None)
 
     if searchTerm:
-
+        
         filtered_listing = [listing.serialize() for listing in Listing.query.filter_by(title=searchTerm)]
         return jsonify(listings=filtered_listing)
 
@@ -256,6 +284,13 @@ def get_listings():
 
 @app.get('/listings/<int:id>')
 def get_listing(id):
+    """Get a listings from database based on the url params 
+    returns an json with a user
+    {
+        "listing":{"city", "country", "details", "id", "image_url", 
+        "price_per_night", "state", "street", "title", "username", "zip"}]
+    }
+    """
 
     listing = Listing.query.get_or_404(id)
 
@@ -273,6 +308,10 @@ def get_listing(id):
 
 @app.delete('/listings/<int:id>')
 def delete_listing(id):
+    """Delete listing and return confirmation message.
+
+    Returns JSON of {message: "Deleted listing successfully"}
+    """
 
     listing = Listing.query.get_or_404(id)
 
@@ -289,19 +328,10 @@ def delete_listing(id):
 @app.post('/messages')
 def create_message():
     """create a message by receiving
-    {
-	"body":"hfsadfello",
-	"property_id":"1",
-	"from_username":"testuser2"
-}
+        {"body", "property_id", "from_username"}
     return a json
-        {
-	"message": {
-		"body": "hfsadfello",
-		"id": 2,
-		"sent_at_date": "Thu, 08 Jun 2023 10:03:32 GMT"
-	}
-} """
+        {"message": { "body", "id", "sent_at_date" } 
+    """
 
     data = request.json
 
@@ -318,16 +348,26 @@ def create_message():
 
 @app.get('/messages/<int:id>')
 def get_message(id):
+    """Get a message from database by id 
+    returns an json with a message
+        {"message": { "body", "id", "sent_at_date" }
+    """
 
     message = Message.query.get_or_404(id)
 
     return jsonify(message=message.serialize())
+
 
 ##############################################################################
 #  Booking routes:
 
 @app.get('/bookings/<int:id>')
 def get_booking(id):
+    """Get a booking from database by id 
+    returns an json with a booking
+        {"booking": {"id", "booking_price_per_night", "check_in_date", "check_out_date"
+        "property_id", "username"}
+    """
 
     booking = Booking.query.get_or_404(id)
 
@@ -339,6 +379,10 @@ def get_booking(id):
 
 @app.get('/bookings')
 def get_bookings():
+    """Get all booking from database 
+    returns an json with a booking
+        {"booking": [booking, booking, booking]}
+    """
 
     bookings = [booking.serialize() for booking in Booking.query.all()]
 
@@ -352,24 +396,16 @@ def get_bookings():
 def create_booking():
     """create a booking by receiving
         {
-        "username":"testuser2",
-        "property_id":"1",
-        "check_in_date": "2008-11-09 15:45:21",
-        "check_out_date": "2008-11-11 11:12:01",
-        "booking_price_per_night":"5"
-    }
+        "username", "property_id", "check_in_date", "check_out_date", 
+        "booking_price_per_night"}
 
     return a json
-   {
-	"booking": {
-		"booking_price_per_night": 5,
-		"check_in_date": "Sun, 09 Nov 2008 15:45:21 GMT",
-		"check_out_date": "Tue, 11 Nov 2008 11:12:01 GMT",
-		"id": 2,
-		"property_id": 1,
-		"username": "testuser2"
-	}
-} """
+        {
+        "booking": {
+            "booking_price_per_night", "check_in_date", "check_out_date", "id", 
+            "property_id", "username"}
+        } 
+    """
 
     data = request.json
 
@@ -390,6 +426,10 @@ def create_booking():
 @app.delete('/bookings/<int:id>')
 @jwt_required()
 def delete_booking(id):
+    """Delete a booking and return confirmation message.
+
+    Returns JSON of {message: "Deleted booking successfully"}
+    """
 
     booking = Booking.query.get_or_404(id)
 
