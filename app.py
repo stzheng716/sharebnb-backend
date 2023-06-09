@@ -239,7 +239,7 @@ def update_listing(id):
 @app.get('/listings')
 def get_listings():
 
-    searchTerm = request.args.get('q')
+    searchTerm = request.args.get('q', None)
 
     if searchTerm:
 
