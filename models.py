@@ -206,12 +206,12 @@ class Booking(db.Model):
     )
 
     check_in_date = db.Column(
-        db.DateTime,
+        db.Date,
         nullable=False
     )
 
     check_out_date = db.Column(
-        db.DateTime,
+        db.Date,
         nullable=False
     )
 
@@ -278,6 +278,7 @@ class Message(db.Model):
         return {
             "id": self.id,
             "body": self.body,
+            "from_user": self.from_user.username,
             "sent_at_date": self.sent_at_date,
         }
 

@@ -85,7 +85,10 @@ def login():
     if user:
         encoded_jwt = create_access_token(identity=user.serialize())
         return jsonify(token=encoded_jwt)
-    return jsonify(error="Invalid credentials")
+    
+    message = {'message':"Invalid credentials"}
+
+    return (jsonify(error=message), 401)
 
 ##############################################################################
 # User routes:
@@ -108,15 +111,15 @@ def get_user(username):
 
     if user and user.listing:
             listings = [listing.serialize() for listing in user.listing]
-            json_user['listing'] = listings
+            json_user['listings'] = listings
 
     if user and user.booking:
             bookings = [booking.serialize() for booking in user.booking]
-            json_user['booking'] = bookings
+            json_user['bookings'] = bookings
 
     if user and user.sent_messages:
             sent_messages = [sent_message.serialize() for sent_message in user.sent_messages]
-            json_user['sent_message'] = sent_messages
+            json_user['sent_messages'] = sent_messages
 
     return jsonify(user=json_user)
 
@@ -158,7 +161,7 @@ def update_user(username):
 
         return jsonify(user=user.serialize())
 
-    return jsonify(error='You can only update your own profile information')
+    return (jsonify(error='You can only update your own profile information'), 401)
 
 
 @app.delete('/users/<username>')
@@ -175,7 +178,7 @@ def delete_user(username):
 
         return jsonify(message='delete successfully')
 
-    return jsonify(error='You can only delete your own profile information')
+    return (jsonify(error='You can only delete your own profile information'), 401)
 
 ##############################################################################
 # Listing routes:
@@ -294,13 +297,15 @@ def get_listing(id):
 
     listing = Listing.query.get_or_404(id)
 
-    if listing and listing.bookings:
+    if listing:
         json_listing = listing.serialize()
 
-        if listing and listing.messages:
-             json_listing['messages'] = [message.serialize() for message in listing.messages]
+        if listing.messages:
+            json_listing['messages'] = [message.serialize() for message in listing.messages]
 
-        json_listing['bookings'] = [booking.serialize() for booking in listing.bookings]
+        if listing.bookings:
+            json_listing['bookings'] = [booking.serialize() for booking in listing.bookings]
+
         return jsonify(listing=json_listing)
 
     return jsonify(listing=listing.serialize())
@@ -387,9 +392,9 @@ def get_bookings():
     bookings = [booking.serialize() for booking in Booking.query.all()]
 
     if bookings:
-        return jsonify(booking=bookings)
+        return jsonify(bookings=bookings)
 
-    return jsonify(error='You cannot look at a booking if your not the host or guest')
+    return (jsonify(error='You cannot look at a booking if your not the host or guest'), 401)
 
 
 @app.post('/bookings')
@@ -440,5 +445,5 @@ def delete_booking(id):
 
             return jsonify(message='Deleted booking successfully')
 
-    return jsonify(message='could not delete booking')
+    return (jsonify(message='could not delete booking'), 401)
 
