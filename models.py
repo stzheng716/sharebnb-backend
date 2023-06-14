@@ -133,6 +133,16 @@ class Listing(db.Model):
         nullable=False
     )
 
+    longitude = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    latitude = db.Column(
+        db.Float,
+        nullable=False
+    )
+
     state = db.Column(
         db.String(2),
         nullable=False
@@ -179,7 +189,9 @@ class Listing(db.Model):
             'country': self.country,
             'price_per_night': self.price_per_night,
             'image_url': self.image_url,
-            'username': self.username
+            'username': self.username,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
         }
 
 

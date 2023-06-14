@@ -28,13 +28,15 @@ l1 = Listing(
     title="title",
     details="details",
     street="streetname",
-    city="cityname",
+    city="Daly City",
     state="Ca",
     zip=12345,
     country="USA",
     price_per_night=10,
     image_url="https://www.keywestnavalhousing.com/media/com_posthousing/images/nophoto.png",
-    username="hostuser"
+    username="hostuser",
+    latitude=37.6879241,
+    longitude=-122.4702079
 )
 
 b1 = Booking(

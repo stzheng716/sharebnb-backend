@@ -8,6 +8,7 @@ from awsUpload import uploadFileToS3
 from jsonschema import validate
 from schemas.userschema import userschema
 from flask_cors import CORS
+from geoCoder import geoCoder
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import current_user
@@ -206,12 +207,16 @@ def create_listing():
         image_url = uploadFileToS3(image)
         full_url = f"{AMAZON_BASE_URL}/{image_url}"
 
+    lng_lat = geoCoder(form['city'])
+
     new_listing = Listing(
         title=form['title'],
         details=form['details'],
         street=form['street'],
         city=form['city'],
         state=form['state'],
+        latitude=lng_lat['latitude'],
+        longitude=lng_lat['longitude'],
         zip=form['zip'],
         country=form['country'],
         price_per_night=form['price_per_night'],
