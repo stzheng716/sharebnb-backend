@@ -68,6 +68,8 @@ class User(db.Model):
         )
 
         db.session.add(user)
+        db.session.commit()
+
         return user
 
     @classmethod
@@ -100,6 +102,9 @@ class User(db.Model):
             'last_name': self.last_name,
             'email': self.email,
             'is_host': self.is_host,
+            'listings': [l.serialize() for l in self.listing],
+            'bookings': [b.serialize() for b in self.booking],
+            'sent_messages': [s.serialize() for s in self.sent_messages]
         }
 
 
@@ -192,6 +197,8 @@ class Listing(db.Model):
             'username': self.username,
             'latitude': self.latitude,
             'longitude': self.longitude,
+            'messages': [m.serialize() for m in self.messages],
+            'bookings': [b.serialize() for b in self.bookings]
         }
 
 
@@ -244,7 +251,6 @@ class Booking(db.Model):
             'check_in_date': self.check_in_date,
             'check_out_date': self.check_out_date,
             'booking_price_per_night': self.booking_price_per_night,
-
         }
 
 class Message(db.Model):

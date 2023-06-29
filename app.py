@@ -51,7 +51,6 @@ def signup():
 
     data = request.json
 
-
     user = User.signup(
         username=data.get('username'),
         first_name=data.get('firstName'),
@@ -60,12 +59,14 @@ def signup():
         password=data.get('password'),
         is_host=data.get('isHost')
     )
-    db.session.commit()
 
-    encoded_jwt = create_access_token(identity=user.serialize())
+    if user:
+        encoded_jwt = create_access_token(identity=user.serialize())
+        return (jsonify(token=encoded_jwt), 201)
+    
+    message = {'message':"Invalid credentials"}
 
-    return (jsonify(token=encoded_jwt), 201)
-
+    return (jsonify(error=message), 401)
 
 @app.post('/auth/login')
 def login():
@@ -107,23 +108,15 @@ def get_user(username):
     }
     """
 
-    user = User.query.get_or_404(username)
-    json_user = user.serialize()
+    user = User.query.get(username)
 
-    if user and user.listing:
-            listings = [listing.serialize() for listing in user.listing]
-            json_user['listings'] = listings
+    if user:
+        json_user = user.serialize()
+        return jsonify(user=json_user)
 
-    if user and user.booking:
-            bookings = [booking.serialize() for booking in user.booking]
-            json_user['bookings'] = bookings
+    message = {'message':f"No user: {username}"}
 
-    if user and user.sent_messages:
-            sent_messages = [sent_message.serialize() for sent_message in user.sent_messages]
-            json_user['sent_messages'] = sent_messages
-
-    return jsonify(user=json_user)
-
+    return (jsonify(error=message), 404)
 
 @app.get('/users')
 def get_users():
@@ -139,6 +132,7 @@ def get_users():
 
 
 @app.patch('/users/<username>')
+@jwt_required()
 def update_user(username):
     """Update user from data in request. Returns updated data.
 
@@ -148,21 +142,21 @@ def update_user(username):
         } 
     """
 
+    if current_user != username:
+        return jsonify({"error": "Invalid Authorization"})
+    
     data = request.json
 
-    user = User.query.get_or_404(username)
-    if user:
-        user.first_name = data.get('firstName', user.first_name)
-        user.last_name = data.get('lastName', user.last_name)
-        user.email = data.get('email', user.email)
-        user.is_host = bool(data.get('isHost', user.is_host))
+    user = User.query.get(username)
 
-        db.session.add(user)
-        db.session.commit()
+    user.first_name = data.get('firstName', user.first_name)
+    user.last_name = data.get('lastName', user.last_name)
+    user.email = data.get('email', user.email)
+    user.is_host = bool(data.get('isHost', user.is_host))
 
-        return jsonify(user=user.serialize())
+    db.session.commit()
 
-    return (jsonify(error='You can only update your own profile information'), 401)
+    return jsonify(user=user.serialize())
 
 
 @app.delete('/users/<username>')
@@ -172,7 +166,8 @@ def delete_user(username):
     Returns JSON of {message: "delete successfully"}
     """
 
-    user = User.query.get_or_404(username)
+    user = User.query.get(username)
+
     if user:
         db.session.delete(user)
         db.session.commit()
@@ -239,7 +234,7 @@ def update_listing(id):
         } 
     """
 
-    listing = Listing.query.get_or_404(id)
+    listing = Listing.query.get(id)
 
     image = request.files.get('image', None)
     form = request.form
@@ -262,9 +257,13 @@ def update_listing(id):
         listing.image_url= full_url or listing.image_url
         listing.username=form.get('username', listing.username)
 
-    db.session.commit()
+        db.session.commit()
+        
+        return (jsonify(listing=listing.serialize()), 200)
 
-    return (jsonify(listing=listing.serialize()), 200)
+    message = {'message':f"No listing: {id}"}
+
+    return (jsonify(error=message), 404)
 
 
 
@@ -300,36 +299,46 @@ def get_listing(id):
     }
     """
 
-    listing = Listing.query.get_or_404(id)
+    listing = Listing.query.get(id)
 
     if listing:
         json_listing = listing.serialize()
 
-        if listing.messages:
-            json_listing['messages'] = [message.serialize() for message in listing.messages]
-
-        if listing.bookings:
-            json_listing['bookings'] = [booking.serialize() for booking in listing.bookings]
-
         return jsonify(listing=json_listing)
+    
+    message = {'message':f"No listing: {id}"}
 
-    return jsonify(listing=listing.serialize())
+    return (jsonify(error=message), 404)
 
 
 @app.delete('/listings/<int:id>')
+@jwt_required()
 def delete_listing(id):
     """Delete listing and return confirmation message.
 
     Returns JSON of {message: "Deleted listing successfully"}
     """
 
-    listing = Listing.query.get_or_404(id)
+    listing = Listing.query.get(id)
+
+    if current_user.username != listing.username:
+        return jsonify({"error": "Invalid Authorization"})
 
     if listing:
+        for message in listing.messages:
+            db.session.delete(message)
+
+        for booking in listing.messages:
+            db.session.delete(booking)
+
         db.session.delete(listing)
         db.session.commit()
+        return jsonify(message='Deleted listing successfully')
+    
+    message = {'message':f"No listing: {id}"}
 
-    return jsonify(message='Deleted listing successfully')
+    return (jsonify(error=message), 404)
+
 
 ##############################################################################
 #  Message routes:
@@ -363,9 +372,15 @@ def get_message(id):
         {"message": { "body", "id", "sent_at_date" }
     """
 
-    message = Message.query.get_or_404(id)
+    message = Message.query.get(id)
 
-    return jsonify(message=message.serialize())
+    if message:
+        return jsonify(message=message.serialize())
+
+    message = {'message':f"No message: {id}"}
+
+    return (jsonify(error=message), 404)
+
 
 
 ##############################################################################
@@ -384,7 +399,9 @@ def get_booking(id):
     if booking:
         return jsonify(booking=booking.serialize())
 
-    return jsonify(error='You cannot look at a booking if your not the host or guest')
+    message = {'message':f"No booking: {id}"}
+
+    return (jsonify(error=message), 404)
 
 
 @app.get('/bookings')
@@ -399,7 +416,10 @@ def get_bookings():
     if bookings:
         return jsonify(bookings=bookings)
 
-    return (jsonify(error='You cannot look at a booking if your not the host or guest'), 401)
+    message = {'message':f"No booking: {id}"}
+
+    return (jsonify(error=message), 404)
+
 
 
 @app.post('/bookings')
@@ -443,12 +463,19 @@ def delete_booking(id):
 
     booking = Booking.query.get_or_404(id)
 
-    if current_user.username == booking.username:
-        if booking:
-            db.session.delete(booking)
-            db.session.commit()
+    print("username", current_user.username)
 
-            return jsonify(message='Deleted booking successfully')
+    if current_user.username != booking.username:
+        return jsonify({"error": "Invalid Authorization"})
+    
+    if booking:
+        db.session.delete(booking)
+        db.session.commit()
 
-    return (jsonify(message='could not delete booking'), 401)
+        return jsonify(message='Deleted booking successfully')
+
+    message = {'message':f"No booking: {id}"}
+
+    return (jsonify(error=message), 404)
+
 
