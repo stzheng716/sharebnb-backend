@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from models import db, connect_db, Listing, User, Message, Booking
 from sqlalchemy.exc import IntegrityError
 from awsUpload import uploadFileToS3
@@ -20,7 +20,8 @@ AMAZON_BASE_URL = "https://sharebnb-bucket.s3.us-west-1.amazonaws.com"
 app = Flask(__name__)
 CORS(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql:///sharebnb")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", "postgresql:///sharebnb")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
@@ -29,7 +30,8 @@ jwt = JWTManager(app)
 connect_db(app)
 load_dotenv()
 
-#JWT https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
+# JWT https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
+
 
 @jwt.user_lookup_loader
 def user_lookup_callback(_jwt_header, jwt_data):
@@ -38,6 +40,7 @@ def user_lookup_callback(_jwt_header, jwt_data):
 
 ##############################################################################
 # auth routes:
+
 
 @app.post('/auth/signup')
 def signup():
@@ -63,10 +66,11 @@ def signup():
     if user:
         encoded_jwt = create_access_token(identity=user.serialize())
         return (jsonify(token=encoded_jwt), 201)
-    
-    message = {'message':"Invalid credentials"}
+
+    message = {'message': "Invalid credentials"}
 
     return (jsonify(error=message), 401)
+
 
 @app.post('/auth/login')
 def login():
@@ -82,18 +86,19 @@ def login():
     user = User.authenticate(
         username=data['username'],
         password=data['password']
-        )
+    )
 
     if user:
         encoded_jwt = create_access_token(identity=user.serialize())
         return jsonify(token=encoded_jwt)
-    
-    message = {'message':"Invalid credentials"}
+
+    message = {'message': "Invalid credentials"}
 
     return (jsonify(error=message), 401)
 
 ##############################################################################
 # User routes:
+
 
 @app.get('/users/<username>')
 def get_user(username):
@@ -114,9 +119,10 @@ def get_user(username):
         json_user = user.serialize()
         return jsonify(user=json_user)
 
-    message = {'message':f"No user: {username}"}
+    message = {'message': f"No user: {username}"}
 
     return (jsonify(error=message), 404)
+
 
 @app.get('/users')
 def get_users():
@@ -144,7 +150,7 @@ def update_user(username):
 
     if current_user != username:
         return jsonify({"error": "Invalid Authorization"})
-    
+
     data = request.json
 
     user = User.query.get(username)
@@ -178,6 +184,7 @@ def delete_user(username):
 
 ##############################################################################
 # Listing routes:
+
 
 @app.post('/listings')
 def create_listing():
@@ -223,6 +230,7 @@ def create_listing():
 
     return (jsonify(listing=new_listing.serialize()), 201)
 
+
 @app.patch('/listings/<int:id>')
 def update_listing(id):
     """Update listing from data in request. Returns updated data.
@@ -246,25 +254,25 @@ def update_listing(id):
         full_url = f"{AMAZON_BASE_URL}/{image_url}"
 
     if listing:
-        listing.title=form.get('title', listing.title),
-        listing.details=form.get('details', listing.details),
-        listing.street=form.get('street', listing.street),
-        listing.city=form.get('city', listing.city),
-        listing.state=form.get('state', listing.state),
-        listing.zip=form.get('zip', listing.zip),
-        listing.country=form.get('country', listing.country),
-        listing.price_per_night=form.get('price_per_night', listing.price_per_night),
-        listing.image_url= full_url or listing.image_url
-        listing.username=form.get('username', listing.username)
+        listing.title = form.get('title', listing.title),
+        listing.details = form.get('details', listing.details),
+        listing.street = form.get('street', listing.street),
+        listing.city = form.get('city', listing.city),
+        listing.state = form.get('state', listing.state),
+        listing.zip = form.get('zip', listing.zip),
+        listing.country = form.get('country', listing.country),
+        listing.price_per_night = form.get(
+            'price_per_night', listing.price_per_night),
+        listing.image_url = full_url or listing.image_url
+        listing.username = form.get('username', listing.username)
 
         db.session.commit()
-        
+
         return (jsonify(listing=listing.serialize()), 200)
 
-    message = {'message':f"No listing: {id}"}
+    message = {'message': f"No listing: {id}"}
 
     return (jsonify(error=message), 404)
-
 
 
 @app.get('/listings')
@@ -275,13 +283,17 @@ def get_listings():
         "listings": [{listing}, {listing}, {listing}]
     }
     """
-    
 
     searchTerm = request.args.get('q', None)
 
     if searchTerm:
-        
-        filtered_listing = [listing.serialize() for listing in Listing.query.filter_by(title=searchTerm)]
+
+        filtered_listing = [listing.serialize() for listing in Listing.query
+                            .filter(func
+                                    .lower(Listing.title)
+                                    .contains(searchTerm.lower()))
+                                    .all()
+                            ]
         return jsonify(listings=filtered_listing)
 
     listings = [listing.serialize() for listing in Listing.query.all()]
@@ -305,8 +317,8 @@ def get_listing(id):
         json_listing = listing.serialize()
 
         return jsonify(listing=json_listing)
-    
-    message = {'message':f"No listing: {id}"}
+
+    message = {'message': f"No listing: {id}"}
 
     return (jsonify(error=message), 404)
 
@@ -334,8 +346,8 @@ def delete_listing(id):
         db.session.delete(listing)
         db.session.commit()
         return jsonify(message='Deleted listing successfully')
-    
-    message = {'message':f"No listing: {id}"}
+
+    message = {'message': f"No listing: {id}"}
 
     return (jsonify(error=message), 404)
 
@@ -358,7 +370,8 @@ def create_message():
     property_id = data['property_id']
     from_username = data['from_username']
 
-    message = Message(body=body, property_id=property_id,from_username=from_username)
+    message = Message(body=body, property_id=property_id,
+                      from_username=from_username)
     db.session.add(message)
     db.session.commit()
 
@@ -377,10 +390,9 @@ def get_message(id):
     if message:
         return jsonify(message=message.serialize())
 
-    message = {'message':f"No message: {id}"}
+    message = {'message': f"No message: {id}"}
 
     return (jsonify(error=message), 404)
-
 
 
 ##############################################################################
@@ -399,7 +411,7 @@ def get_booking(id):
     if booking:
         return jsonify(booking=booking.serialize())
 
-    message = {'message':f"No booking: {id}"}
+    message = {'message': f"No booking: {id}"}
 
     return (jsonify(error=message), 404)
 
@@ -416,10 +428,9 @@ def get_bookings():
     if bookings:
         return jsonify(bookings=bookings)
 
-    message = {'message':f"No booking: {id}"}
+    message = {'message': f"No booking: {id}"}
 
     return (jsonify(error=message), 404)
-
 
 
 @app.post('/bookings')
@@ -445,7 +456,7 @@ def create_booking():
         check_in_date=data['check_in_date'],
         check_out_date=data['check_out_date'],
         booking_price_per_night=data['booking_price_per_night']
-        )
+    )
 
     db.session.add(booking)
     db.session.commit()
@@ -467,15 +478,13 @@ def delete_booking(id):
 
     if current_user.username != booking.username:
         return jsonify({"error": "Invalid Authorization"})
-    
+
     if booking:
         db.session.delete(booking)
         db.session.commit()
 
         return jsonify(message='Deleted booking successfully')
 
-    message = {'message':f"No booking: {id}"}
+    message = {'message': f"No booking: {id}"}
 
     return (jsonify(error=message), 404)
-
-
