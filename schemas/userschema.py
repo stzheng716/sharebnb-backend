@@ -1,4 +1,4 @@
-userschema = {
+user_schema = {
      "type" : "object",
      "properties" : {
          "username" : {"type" : "string"},

@@ -112,6 +112,10 @@ class Listing(db.Model):
 
     __tablename__= 'listings'
 
+    __table_args__=(
+        db.UniqueConstraint("street", "city"),
+    )
+
     id = db.Column(
         db.Integer,
         primary_key=True,

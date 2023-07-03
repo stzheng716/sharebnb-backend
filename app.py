@@ -5,8 +5,8 @@ from sqlalchemy import func
 from models import db, connect_db, Listing, User, Message, Booking
 from sqlalchemy.exc import IntegrityError
 from awsUpload import uploadFileToS3
-from jsonschema import validate
-from schemas.userschema import userschema
+from flask_json_schema import JsonSchema, JsonValidationError
+from schemas.userschema import user_schema
 from flask_cors import CORS
 from geoCoder import geoCoder
 
@@ -26,12 +26,15 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 
+schema=JsonSchema(app)
 jwt = JWTManager(app)
 connect_db(app)
 load_dotenv()
 
-# JWT https://flask-jwt-extended.readthedocs.io/en/stable/automatic_user_loading.html
 
+@app.errorhandler(JsonValidationError)
+def validation_error(e):
+    return jsonify({ 'error': e.message, 'errors': [validation_error.message for validation_error  in e.errors]})
 
 @jwt.user_lookup_loader
 def user_lookup_callback(_jwt_header, jwt_data):
@@ -41,8 +44,9 @@ def user_lookup_callback(_jwt_header, jwt_data):
 ##############################################################################
 # auth routes:
 
-
+# add try expect
 @app.post('/auth/signup')
+@schema.validate(user_schema)
 def signup():
     """Handle user signup.
     Create new user and add to DB.
@@ -54,14 +58,31 @@ def signup():
 
     data = request.json
 
+    username = data.get('username')
+    email = data.get('email')
+
+    # Check if username already exists
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        message = {'message': "Username already exists"}
+        return (jsonify(error=message), 409)
+
+    # Check if email already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        message = {'message': "Email already exists"}
+        return (jsonify(error=message), 409)
+    
     user = User.signup(
-        username=data.get('username'),
-        first_name=data.get('firstName'),
-        last_name=data.get('lastName'),
-        email=data.get('email'),
-        password=data.get('password'),
-        is_host=data.get('isHost')
-    )
+            username=username,
+            first_name=data.get('firstName'),
+            last_name=data.get('lastName'),
+            email=email,
+            password=data.get('password'),
+            is_host=data.get('isHost')
+        )
+
+    
 
     if user:
         encoded_jwt = create_access_token(identity=user.serialize())
