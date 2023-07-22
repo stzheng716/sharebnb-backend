@@ -21,11 +21,14 @@ AMAZON_BASE_URL = "https://sharebnb-bucket.s3.us-west-1.amazonaws.com"
 app = Flask(__name__)
 CORS(app)
 
+database_url = os.environ['DATABASE_URL']
+database_url = database_url.replace('postgres://', 'postgresql://')
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "postgresql:///sharebnb")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
 schema=JsonSchema(app)
 jwt = JWTManager(app)
